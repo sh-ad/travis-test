@@ -12,7 +12,6 @@ addons:
 
 script: 
   # Build and run this project
-  - g++ *.cpp -g -std=c++17 -O3 -Wall -Wextra -pthread -pedantic -o posix travis_gcc_cpp17_cppcheck
-  - ./travis_gcc_cpp17_cppcheck
+  - g++ *.cpp -g -std=c++17 -O3 -Wall -Wextra -pthread -pedantic -o posix
   # cppcheck
   - cppcheck --quiet --error-exitcode=1 . 
