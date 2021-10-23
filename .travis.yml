@@ -1,17 +1,17 @@
 language: cpp
-compiler: gcc
-dist: trusty
 
-os: linux
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-6
+compiler:
+  - gcc
 
-script: 
-  # Build and run this project
-  - g++ *.cpp -g -std=c++17 -O3 -Wall -Wextra -pthread -pedantic -o posix
-  # cppcheck
-  - cppcheck --quiet --error-exitcode=1 . 
+before_script:
+  # create a build folder for the out-of-source build
+  - mkdir build
+  # switch to build directory
+  - cd build
+  # run cmake; here we assume that the project's
+  # top-level CMakeLists.txt is located at '..'
+  - cmake ..
+
+script:
+  # once CMake has done its job we just build using make as usual
+  - make
