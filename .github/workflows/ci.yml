@@ -25,14 +25,13 @@ jobs:
 #        token: "1145a05a95ace3cf275b2d2d301c78f046"
 #        job: "echo-docker-pipeline"
 
-    - name: "Trigger jenkins job"
-      uses: GoldenspearLLC/build-jenkins-job@master
+    - uses: actions/checkout@master
+    - name: jenkins
+      uses: enflo/jenkins-action@master
       with:
-        jenkins-url: "kel.osll.ru/jenkins"
-        jenkins-token: "1145a05a95ace3cf275b2d2d301c78f046"
-        user: "ashahov"
-        job-path: "job/test-jobs/job/echo-docker-pipeline"
-        job-params: "{'param1': 'value1', 'param2': 'value2'}"
-    - name: Get job status
-      run: echo "Job status is ${{ steps.job-build.outputs.job_status }}"
+        url: http://kel.osll.ru/jenkins/
+        user: ashahov
+        token: 1145a05a95ace3cf275b2d2d301c78f046
+        job: echo-docker-pipeline
+        parameters: {{ test_param: 1, test_param_2: two }}
 
