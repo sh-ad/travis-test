@@ -22,6 +22,6 @@ jobs:
           jenkins_url: "http://kel.osll.ru/jenkins/job/test-jobs/"
           jenkins_user: "ashahov"
           jenkins_token: "1145a05a95ace3cf275b2d2d301c78f046"
-          job_name: "echo-docker-pipeline"
+          job_name: "test-jobs/job/echo-docker-pipeline"
           job_params: '{"param_1":"value_1", "param_2":"value_2"}'
           job_timeout: "3600" # Default 30 sec. (optional)
