@@ -28,9 +28,9 @@ jobs:
     - name: Trigger jenkins job
       uses: jabbukka/jenkins-trigger@main
       with:
-        url: "http://kel.osll.ru/jenkins/job/test-jobs"
-        job_name: "echo-docker-pipeline"
-        user_name: "ashahov"
-        api_token: "1145a05a95ace3cf275b2d2d301c78f046"
-        parameter: "param1":"value1"
-        wait: "true"
+        url: http://kel.osll.ru/jenkins/job/test-jobs
+        job_name: echo-docker-pipeline
+        user_name: ashahov
+        api_token: 1145a05a95ace3cf275b2d2d301c78f046
+        parameter: {"param1":"value1"}
+        wait: true
