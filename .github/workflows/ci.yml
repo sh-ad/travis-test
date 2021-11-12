@@ -33,7 +33,5 @@ jobs:
         user: ashahov
         token: 1145a05a95ace3cf275b2d2d301c78f046
         job: echo-docker-pipeline
-        parameters: 
-            test_param: 1
-            test_param_2: two
+        parameters: 1, two
 
