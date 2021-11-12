@@ -32,6 +32,6 @@ jobs:
         url: http://kel.osll.ru/jenkins/
         user: ashahov
         token: 1145a05a95ace3cf275b2d2d301c78f046
-        job: echo-docker-pipeline
+        job: job/test-jobs/job/echo-docker-pipeline
         parameters: 1, two
 
