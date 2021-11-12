@@ -28,7 +28,7 @@ jobs:
     - name: "Trigger jenkins job"
       uses: GoldenspearLLC/build-jenkins-job@master
       with:
-        jenkins-url: "http://kel.osll.ru/jenkins"
+        jenkins-url: "kel.osll.ru/jenkins"
         jenkins-token: "1145a05a95ace3cf275b2d2d301c78f046"
         user: "ashahov"
         job-path: "job/test-jobs/job/echo-docker-pipeline"
