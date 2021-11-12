@@ -7,8 +7,8 @@ on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+#  pull_request:
+#    branches: [ main ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -32,7 +32,7 @@ jobs:
         jenkins-token: "1145a05a95ace3cf275b2d2d301c78f046"
         user: "ashahov"
         job-path: "job/test-jobs/job/echo-docker-pipeline"
-        job-params: "{'param1': 'value1', 'param2': 'value2'}"
+#        job-params: "{'param1': 'value1', 'param2': 'value2'}"
     - name: Get job status
       run: echo "Job status is ${{ steps.job-build.outputs.job_status }}"
 
