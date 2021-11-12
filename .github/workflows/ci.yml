@@ -12,16 +12,16 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    name: Build
+  your_job_name:
+    name: Trigger Jenkins Job
     runs-on: ubuntu-latest
     steps:
-    - name: trigger single Job
-      uses: appleboy/jenkins-action@master
-      with:
-        url: "http://kel.osll.ru/jenkins/job/test-jobs"
-        user: "ashahov"
-        token: "1145a05a95ace3cf275b2d2d301c78f046"
-        job: "echo-docker-pipeline"
-# test
+      - name: Trigger posix CI job
+        uses: toptal/jenkins-job-trigger-action@master
+        with:
+          jenkins_url: "http://kel.osll.ru/jenkins/job/test-jobs/"
+          jenkins_user: "ashahov"
+          jenkins_token: "1145a05a95ace3cf275b2d2d301c78f046"
+          job_name: "echo-docker-pipeline"
+          job_params: '{"param_1":"value_1", "param_2":"value_2"}'
+          job_timeout: "3600" # Default 30 sec. (optional)
