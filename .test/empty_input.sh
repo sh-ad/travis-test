@@ -3,8 +3,7 @@
 set -e
 CC=clang
 CXX=clang++
-cp Makefile.soft ../Makefile
-cd ..
+cp Makefile.soft Makefile
 make
 
 RES=$(echo '' | timeout 10s ./posix 10 10)
