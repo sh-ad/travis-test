@@ -3,8 +3,9 @@
 set -e
 CC=clang
 CXX=clang++
+#cp Makefile.soft ../Makefile
+#cd ..
 cp Makefile.soft Makefile
-cd ..
 for file in *; do
   echo "${file##*/}"
 done
