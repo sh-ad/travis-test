@@ -4,13 +4,8 @@ set -e
 CC=clang
 CXX=clang++
 
-for file in $PWD; do
-  echo "${file##*/}"
-done
-
 cp Makefile.soft Makefile
 
-echo $PWD
 echo "Step 1. Build"
 make
 
