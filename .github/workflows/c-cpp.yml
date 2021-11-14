@@ -5,14 +5,18 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-
+  posix_check:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: Run script file
+    - name: Run random.sh
       run: |
-         chmod +x ./.github/workflows/scripts/random.sh
-         ./.github/workflows/scripts/random.sh
+         chmod +x ./.test/random.sh
+         ./.test/random.sh
+      shell: bash
+    - name: Run empty_input.sh
+      run: |
+         chmod +x ./.test/empty_input.sh
+         ./.test/empty_input.sh
       shell: bash
