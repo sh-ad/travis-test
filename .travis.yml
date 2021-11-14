@@ -4,10 +4,6 @@ compiler:
   - gcc
 
 before_script:
-  # create a build folder for the out-of-source build
-  - mkdir build
-  # switch to build directory
-  - cd build
   - cp Makefile.soft Makefile
 
 script:
