@@ -7,8 +7,10 @@ CXX=clang++
 for file in $PWD; do
   echo "${file##*/}"
 done
-cp Makefile.soft */Makefile
-cd */
+
+cp Makefile.soft "$(ls -t1 -d */ |grep  "travis" |head -n1)"/Makefile
+
+cd "$(ls -t1 -d */ |grep  "travis" |head -n1)"
 
 echo $PWD
 echo "Step 1. Build"
