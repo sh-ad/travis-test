@@ -3,7 +3,7 @@
 set -e
 CC=clang
 CXX=clang++
-cp ./.github/workflows/scripts/Makefile.soft ../Makefile
+cp Makefile.soft ../Makefile
 cd ..
 echo "Step 1. Build"
 make
