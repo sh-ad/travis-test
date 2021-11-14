@@ -7,8 +7,10 @@ CXX=clang++
 for file in $PWD; do
   echo "${file##*/}"
 done
+
 cp Makefile.soft ./.test/Makefile
 
+cd ./.test
 echo $PWD
 echo "Step 1. Build"
 make
