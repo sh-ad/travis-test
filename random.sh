@@ -5,12 +5,13 @@ CC=clang
 CXX=clang++
 cp Makefile.soft ../Makefile
 cd ..
-echo "Step 1. Build"
-make
-
 for file in *; do
   echo "${file##*/}"
 done
+echo "Step 1. Build"
+make
+
+
 
 VALUES="$((( RANDOM )))"
 for i in {1..100}; do
