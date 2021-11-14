@@ -4,7 +4,11 @@ compiler:
   - gcc
 
 before_script:
+  - set -e
+  - CC=clang
+  - CXX=clang++
   - cp Makefile.soft Makefile
+  - make
 
 script:
   # once CMake has done its job we just build using make as usual
