@@ -5,8 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-
+  posix check:
     runs-on: ubuntu-latest
 
     steps:
