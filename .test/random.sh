@@ -6,6 +6,7 @@ CXX=clang++
 
 echo $PWD
 cp Makefile.soft /.test/Makefile
+echo $PWD
 echo "Step 1. Build"
 make
 
