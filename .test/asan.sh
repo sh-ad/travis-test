@@ -3,16 +3,10 @@
 set -e
 CC=clang
 CXX=clang++
-#cp Makefile.soft ../Makefile
-#cd ..
-cp Makefile.soft Makefile
-for file in *; do
-  echo "${file##*/}"
-done
+cp Makefile.asan ../Makefile
+cd ..
 echo "Step 1. Build"
 make
-
-
 
 VALUES="$((( RANDOM )))"
 for i in {1..100}; do
@@ -22,8 +16,8 @@ done
 SUM=$(echo "$VALUES" | sed 's/ /+/g' | bc)
 
 echo "Step 2. Run test"
-echo "echo '${VALUES}' | timeout 10s ./posix 3 150"
-OUT=$(echo "${VALUES}" | timeout 10s ./posix 3 150)
+echo "echo '${VALUES}' | timeout 30s ./posix 5 1000"
+OUT=$(echo "${VALUES}" | timeout 30s ./posix 5 1000)
 
 RC=$?
 
