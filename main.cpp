@@ -1,185 +1,182 @@
-#include <sstream>
-#include <iostream>
-#include <atomic>
 #include <pthread.h>
-#include <vector>
+#include <signal.h>
+#include <unistd.h>
+
 #include <csignal>
-#include <thread>
-#include <random>
+#include <cstdlib>
+#include <ctime>
 
-#define NOERROR 0
-#define OVERFLOW 1
+#include <iostream>
+#include <string>
+#include <vector>
 
-int N;
-int MAX_SLEEP_TIME;
+#include "counter.hpp"
+#include "data.hpp"
 
-pthread_mutex_t mutex;
-std::vector<pthread_t> consumers_threads{};
-pthread_cond_t condition_new_element;
-pthread_cond_t condition_processing;
-pthread_t producer_thread;
-pthread_t interruptor_thread;
+sigset_t sigterm_sigset() {
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGTERM);
+    return sigset;
+}
 
+namespace {
+volatile std::sig_atomic_t terminated = false;
+}
 
-thread_local std::atomic<int> last_error_code(NOERROR);
-std::atomic<bool> values_ending{false};
-std::atomic<bool> come_new_element{false};
+void sigterm_handler(int) {
+    terminated = true;
+}
 
-
-struct consumers_data {
-    int *num;
-    int error = 0;
-    int sum = 0;
+struct producer_args {
+    Data& data;
+    Counter& consumer_counter;
 };
 
+void* producer_routine(void* arg) {
+    producer_args& args = *(producer_args*)arg;
 
-int get_random_value(int m) {
-    if (m == 0) {
-        return 0;
-    }
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dist(0, 1000);
-    return dist(gen) % m;
-}
+    // Unblock SIGTERM and set its handler
+    sigset_t sigterm = sigterm_sigset();
+    pthread_sigmask(SIG_UNBLOCK, &sigterm, nullptr);
+    std::signal(SIGTERM, sigterm_handler);
 
-bool check_int_overflow(int a, int b) {
-    if (a > 0 || b > 0) {
-        return a + b <= std::min(a, b);
-    } else {
-        return a + b >= std::min(a, b);
-    }
-}
+    // Wait for consumer to start
+    args.consumer_counter.wait(1);
 
-int get_last_error() {
-    return last_error_code;
-}
-
-void set_last_error(int code) {
-    last_error_code = code;
-}
-
-
-void signalHandler(int) {
-    values_ending = true;
-    pthread_mutex_lock(&mutex);
-    pthread_cancel(producer_thread);
-    pthread_cond_signal(&condition_processing);
-    pthread_cond_broadcast(&condition_new_element);
-    pthread_mutex_unlock(&mutex);
-}
-
-
-void *producer_routine(void *num) {
-    int number;
-    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
-    while (std::cin >> number && !values_ending) {
-        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
-        pthread_mutex_lock(&mutex);
-        *static_cast<int *> (num) = number;
-        come_new_element = true;
-        pthread_cond_signal(&condition_new_element);
-        while (come_new_element && !values_ending) {
-            pthread_cond_wait(&condition_processing, &mutex);
-        }
-        pthread_mutex_unlock(&mutex);
-        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
-    }
-
-    pthread_mutex_lock(&mutex);
-    values_ending = true;
-    pthread_cond_broadcast(&condition_new_element);
-    pthread_mutex_unlock(&mutex);
-    return nullptr;
-}
-
-
-void *consumer_routine(void *arg) {
-    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
-    auto *consumer_args = static_cast<consumers_data *> (arg);
-    int *num = consumer_args->num;
-
-    int sum = 0;
-    while (true) {
-        pthread_mutex_lock(&mutex);
-        while (!come_new_element && !values_ending) {
-            pthread_cond_wait(&condition_new_element, &mutex);
-        }
-
-        if (values_ending) {
-            pthread_mutex_unlock(&mutex);
+    // Read data, loop through each value and update the value, notify consumer, wait for consumer to process
+    std::FILE* file = std::fopen("in.txt", "r");
+    char symbol;
+    do {
+        int value;
+        if (std::fscanf(file, "%d%c", &value, &symbol) < 2) {
             break;
         }
+        args.data.set(value);
+    } while (symbol != '\n' && !terminated);
+    std::fclose(file);
+    args.data.end();
 
-        bool check_overflow = check_int_overflow(sum, *num);
-        if (check_overflow) {
-            set_last_error(OVERFLOW);
-        } else {
-            sum += *num;
-            come_new_element = false;
-            pthread_cond_signal(&condition_processing);
+    return nullptr;
+}
+
+void random_sleep(useconds_t sleep_max) {
+    if (sleep_max) {
+        useconds_t sleep_time = std::rand() % sleep_max;
+        usleep(sleep_time);
+    }
+}
+
+struct consumer_args {
+    Data& data;
+    Counter& consumer_counter;
+    useconds_t sleep_max;
+    bool debug;
+};
+
+void* consumer_routine(void* arg) {
+    consumer_args& args = *(consumer_args*)arg;
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
+
+    // notify about start
+    args.consumer_counter.inc();
+
+    // for every update issued by producer, read the value and add to sum
+    int sum = 0;
+    pthread_t thread_id = pthread_self();
+    while (true) {
+        std::optional<int> value = args.data.get();
+        if (!value) {
+            break;
         }
-
-        pthread_mutex_unlock(&mutex);
-        if (check_overflow) break;
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(get_random_value(MAX_SLEEP_TIME)));
+        sum += value.value();
+        if (args.debug) {
+            std::cout << thread_id << ' ' << sum << std::endl;
+        }
+        random_sleep(args.sleep_max);
     }
-    consumer_args->error = get_last_error();
-    consumer_args->sum = sum;
+
+    // return pointer to result (for particular consumer)
+    return new int{sum};
+}
+
+void interrupt_consumers(Data& data, std::vector<pthread_t> const& consumers) {
+    while (!data.ended()) {
+        pthread_t consumer = consumers[std::rand() % consumers.size()];
+        pthread_cancel(consumer);
+    }
+}
+
+struct interruptor_args {
+    Data& data;
+    Counter& consumer_counter;
+    std::vector<pthread_t> const& consumers;
+};
+
+void* consumer_interruptor_routine(void* arg) {
+    interruptor_args& args = *(interruptor_args*)arg;
+
+    // wait for consumers to start
+    args.consumer_counter.wait(args.consumers.size());
+
+    // interrupt random consumer while producer is running
+    while (!args.data.ended()) {
+        int random_consumer = std::rand() % args.consumers.size();
+        pthread_cancel(args.consumers[random_consumer]);
+    }
+
     return nullptr;
 }
 
-void *consumer_interruptor_routine(void *) {
-    while (!values_ending) {
-        pthread_cancel(consumers_threads[get_random_value(N)]);
-    }
-    return nullptr;
-}
+int run_threads(int N, useconds_t sleep_max, bool debug) {
+    pthread_t producer, interruptor;
+    std::vector<pthread_t> consumers(N);
+    Data data;
+    Counter consumer_counter;
 
-int run_threads() {
-    signal(SIGINT, signalHandler);
+    std::srand(std::time(nullptr));
 
-    pthread_mutex_init(&mutex, nullptr);
-    consumers_threads.reserve(N);
-    pthread_cond_init(&condition_new_element, nullptr);
-    pthread_cond_init(&condition_processing, nullptr);
-    int value{};
-    std::vector<consumers_data> consumers_threads_args(N, {&value});
+    // block SIGTERM in this thread and its children
+    sigset_t sigterm = sigterm_sigset();
+    pthread_sigmask(SIG_BLOCK, &sigterm, nullptr);
+
+    // start 2+N threads and wait until they're done
+    producer_args* p_args = new producer_args{data, consumer_counter};
+    pthread_create(&producer, nullptr, producer_routine, p_args);
+    interruptor_args* i_args = new interruptor_args{data, consumer_counter, consumers};
+    pthread_create(&interruptor, nullptr, consumer_interruptor_routine, i_args);
+    consumer_args* c_args = new consumer_args{data, consumer_counter, sleep_max, debug};
     for (int i = 0; i < N; ++i) {
-        pthread_create(&consumers_threads[i], nullptr, consumer_routine, &consumers_threads_args[i]);
+        pthread_create(&consumers[i], nullptr, consumer_routine, c_args);
     }
 
-    pthread_create(&producer_thread, nullptr, producer_routine, &value);
-    pthread_create(&interruptor_thread, nullptr, consumer_interruptor_routine, nullptr);
-
-    pthread_join(interruptor_thread, nullptr);
-    pthread_join(producer_thread, nullptr);
-
+    pthread_join(producer, nullptr);
+    pthread_join(interruptor, nullptr);
     int sum = 0;
     for (int i = 0; i < N; ++i) {
-        auto &consumer_thread_args = consumers_threads_args[i];
-        pthread_join(consumers_threads[i], nullptr);
-        sum += consumer_thread_args.sum;
-        if (consumer_thread_args.error == OVERFLOW) {
-            return 1;
-        }
+        void* partial_sum;
+        pthread_join(consumers[i], &partial_sum);
+        sum += *(int*)partial_sum;
+        delete (int*)partial_sum;
     }
 
-    pthread_mutex_destroy(&mutex);
-    pthread_cond_destroy(&condition_new_element);
-    pthread_cond_destroy(&condition_processing);
+    delete p_args;
+    delete i_args;
+    delete c_args;
 
-    std::cout << sum << std::endl;
-    return 0;
+    // return aggregated sum of values
+    return sum;
 }
 
-int main(int argc, char **argv) {
-    if (argc != 3)
+int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Too few arguments" << std::endl;
         return 1;
-    std::stringstream ss;
-    ss << argv[1] << ' ' << argv[2];
-    ss >> N >> MAX_SLEEP_TIME;
-    return run_threads();
+    }
+    int N = std::atoi(argv[1]);
+    int sleep_max_ms = std::atoi(argv[2]);
+    bool debug = argc > 3 && std::string(argv[3]) == "-debug";
+
+    std::cout << run_threads(N, sleep_max_ms * 1000, debug) << std::endl;
+    return 0;
 }
