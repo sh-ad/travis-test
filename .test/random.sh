@@ -3,8 +3,7 @@
 set -e
 CC=clang
 CXX=clang++
-cp Makefile.soft ../Makefile
-cd ..
+cp Makefile.soft ../.test/Makefile
 echo "Step 1. Build"
 make
 
