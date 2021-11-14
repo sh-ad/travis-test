@@ -8,6 +8,10 @@ cd ..
 echo "Step 1. Build"
 make
 
+for file in *; do
+  echo "${file##*/}"
+done
+
 VALUES="$((( RANDOM )))"
 for i in {1..100}; do
     VALUES+=" $((( RANDOM )))"
